@@ -13,6 +13,6 @@ webdriver-manager==4.0.0
 # Validación y tipado
 pydantic==2.11.7
 typing-extensions==4.12.2
-
+playwright==1.44.0
 # Variables de entorno opcionales
 python-dotenv==1.0.0
