@@ -43,18 +43,27 @@ def get_token(user, password):
         try:
             driver.switch_to.default_content()
 
-            # Dentro de servicios UANL loggear a Nexus
-            nexus = driver.find_element(By.CSS_SELECTOR, "img[src='https://deimos.dgi.uanl.mx/uanlimg/ws/nexus_btn.jpg']")
-            nexus.click()
-            nexus = driver.find_element(By.NAME, "btnNexus")
-            nexus.click()
-            time.sleep(14)
+            element = driver.find_element(By.ID, "linkNexus")
+            driver.execute_script("""
+var element = arguments[0];
+if (element) {
+    var clickEvent = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window
+    });
+    element.dispatchEvent(clickEvent);
+}
+""", element)
 
-            # Recargar Nexus y Obtener Token
+            # Dentro de servicios UANL loggear a Nexus
+            #nexus = driver.find_element(By.CSS_SELECTOR, "img[src='https://deimos.dgi.uanl.mx/uanlimg/ws/nexus_btn.jpg']")
+            #nexus.click()
+            #nexus = driver.find_element(By.NAME, "btnNexus")
+            #nexus.click()
+             # Recargar Nexus y Obtener Token
             windows = driver.window_handles
             driver.switch_to.window(windows[1])
-            driver.refresh()
-            time.sleep(6)
             token = driver.wait_for_request("ConsultarModalidades", timeout=10)
             token = token.headers['token']
             success = True
