@@ -1,6 +1,6 @@
 import requests
 import json
-
+from tokens import get_token
 url = "https://api.nexus.uanl.mx/WebApi/Curso/ConsultarCarpetaCursos"
 
 payload = json.dumps({
@@ -27,7 +27,10 @@ headers = {
   'token': 'none',
   'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
 }
-token1 = input("inserte token: ")
+
+mat = input("Matricula: ")
+password = input("Password: ")
+token1 = get_token(mat, password)
 headers['token'] = token1
 response = requests.request("POST", url, headers=headers, data=payload)
 
@@ -52,5 +55,3 @@ for carpeta in data_json.get("Carpetas", []):
         print(f"Fechas: {fecha_inicio} → {fecha_fin}")
         print("Profesores:", ", ".join(profesores))
         print("-" * 40)
-
-
