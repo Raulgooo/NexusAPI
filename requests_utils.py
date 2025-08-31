@@ -75,7 +75,6 @@ def get_tareas(token):
     url = "https://api.nexus.uanl.mx/WebApi/Tarea/ConsultarTareas"
 
     payload = json.dumps({
-        "CursoId": curso_id
     })
 
     headers = {
@@ -119,6 +118,34 @@ def get_tareas(token):
 # token = "TU_TOKEN_AQUI"
 # tareas = get_tareas(token)
 # print(json.dumps(tareas, indent=4, ensure_ascii=False))
+
+def parse_user(data_json):
+    persona = data_json.get("Persona", {})
+    nombre_completo = " ".join(filter(None, [
+        persona.get("Nombre"),
+        persona.get("ApellidoPaterno"),
+        persona.get("ApellidoMaterno")
+    ])).strip()
+
+    userdata = []
+
+    for cuenta in persona.get("Cuentas", []):
+        dependencias = list({  # set para evitar duplicados automáticamente
+            area.get("AreaAcademica", {}).get("Dependencia", {}).get("NombreCorto")
+            for area in cuenta.get("AreasAcademicas", [])
+            if area.get("AreaAcademica", {}).get("Dependencia", {}).get("NombreCorto")
+        })
+
+        userdata.append({
+            "NombreAlumno": nombre_completo,
+            "NombreUsuario": cuenta.get("NombreUsuario"),
+            "CorreoUniversitario": cuenta.get("CorreoUniversitario"),
+            "Dependencias": dependencias
+        })
+
+    return userdata
+
+
 def get_user(token):
   url = "https://api.nexus.uanl.mx/WebApi/Seguridad/ConsultarPerfil"
 
@@ -137,34 +164,13 @@ def get_user(token):
     'sec-fetch-mode': 'cors',
     'sec-fetch-site': 'same-site',
     'sistemaid': '1',
-    'token': 'U2VaHYytJVOTMmlUpFaN/WpkJGpgG/JXX/EsxHcPk2U3V1xAghJikjNBVPyp7SB/GfkobhF3ZuXW+ohS42G66OJKHk4+kYWbHn9z46fknH1kDjm6IhRsPBYDXvXGZsjzdtlg6bhUxQ1ZAF9v2EZHsA5X+FdJM7hUd6UMkYRpZi5HRWM6n5gjLNJG+dU+PVS15ZxDAkLflQBjqYemAQDOpKfp97cWRp/fIrFctLziM2AWya+Gp+tBSagGX+hrBdhiZEdGJVO1aJ0v6g5w6Wpr1HCr6m5UENz1Eyw2sZ5WzFgyYx20FD0OmIQfktraZK/XeFtwqcQ/1b1uL/IPOU04mDsUUy+UABiiP9J1cXZtT5m/oXNl+r7OHnHRjraztYrYZlZ3vWRU0y9513NkDSaLuF1h1wWbWSp1ASQsQwXYgiYzYT1xrSTTL0ovstDVM/8bHUbt9uSEfYA54hOKJ2AeAbIviuJ3v0y42jOK8jyWKEIMtxxryEhGbfhCH5qYqjFS',
+    'token': token,
     'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36'
   }
 
   response = requests.request("POST", url, headers=headers, data=payload)
   data_json = response.json()
 
-  userdata = []
-
-  persona = data_json.get("Persona", {})
-  nombre_completo = f"{persona.get('Nombre', '')} {persona.get('ApellidoPaterno', '')} {persona.get('ApellidoMaterno', '')}".strip()
-  
-  for cuenta in persona.get("Cuentas", []):
-      # Obtener dependencias de esta cuenta
-      dependencias = []
-      for area in cuenta.get("AreasAcademicas", []):
-          dep = area.get("AreaAcademica", {}).get("Dependencia", {}).get("NombreCorto")
-          if dep and dep not in dependencias:
-              dependencias.append(dep)
-
-      user_info = {
-          "NombreAlumno": nombre_completo,
-          "NombreUsuario": cuenta.get("NombreUsuario"),
-          "CorreoUniversitario": cuenta.get("CorreoUniversitario"),
-          "Dependencias": dependencias
-      }
-      userdata.append(user_info)
+  userdata = parse_user(data_json)
 
   return userdata
-token2 = get_token("XXX", "XXXX")
-print(get_cursos(token2)) #19200 segundos segundos

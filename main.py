@@ -1,20 +1,51 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import asyncio
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
+from tokens import get_token
+from requests_utils import get_cursos, get_tareas, get_user
+from typing import Dict
+
+
 
 class User(BaseModel):  #User class
     user: str
     password: str
 
+class TokenRequest(BaseModel):
+    user: str
+    
+token_cache: Dict[str, str] = {}
+
 app = FastAPI(title="NexusAPI", version="1.0.0")
 
-@app.post("/login") #Endpoint to login
+@app.post("/login") #Endpoint  login
 async def login(user: User):
-    driver = webdriver.Chrome()
-    ##if user.user == "admin" and user.password == "admin":
-        #eturn {"message": "Login successful"}
-        ##selenium
+    try:
+        token = get_token(user.user, user.password)
+        token_cache[user.user] = token
+        return {"user": user.user, "token": token}
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Login failed: {str(e)}")
+
+
+@app.post("/cursos")
+async def cursos(req: TokenRequest):
+    token = token_cache.get(req.user)
+    if not token:
+        raise HTTPException(status_code=401, detail=f"Login failed: {str(e)}")
+    return get_cursos(token)
+    
+@app.post("/calendario")
+async def calendario(req: TokenRequest):
+    token = token_cache.get(req.user)
+    if not token:
+        raise HTTPException(status_code=401, detail="Token Invalido o no ha iniciado sesion.")
+    return get_tareas(token)
+
+
+@app.post("/user")
+async def user(req: TokenRequest):
+    token = token_cache.get(req.user)
+    if not token:
+        raise HTTPException(status_code=401, detail="Token Invalido o no ha iniciado sesion.")
+    return get_user(token)

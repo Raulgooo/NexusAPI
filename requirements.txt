@@ -1,0 +1,18 @@
+# FastAPI y servidor ASGI
+fastapi==0.109.2
+uvicorn[standard]==0.23.2
+
+# Requests y utilidades HTTP
+requests==2.32.0
+
+# Selenium y Selenium Wire
+selenium==4.15.0
+selenium-wire==5.1.0
+webdriver-manager==4.0.0
+
+# Validación y tipado
+pydantic==2.11.7
+typing-extensions==4.12.2
+
+# Variables de entorno opcionales
+python-dotenv==1.0.0
