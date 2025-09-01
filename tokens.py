@@ -1,79 +1,66 @@
-from seleniumwire import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from webdriver_manager.chrome import ChromeDriverManager
-import time
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
-# Puse todas las variables y las funciones en ingles por que es mas rapido de escribir, lol
-# Funcion para obtener el token de inicio de sesion de nexus.
+import httpx
+import re
+from urllib.parse import urlparse, parse_qs
 def get_token(user, password):
 
-# Configurar Chrome en modo headless
-    chrome_options = Options()
-    chrome_options.add_argument("--headless=new")  # headless moderno
-    chrome_options.add_argument("--window-size=1920,1080") # Ejecuta Chrome sin interfaz
-    chrome_options.add_argument("--disable-gpu")  # Deshabilita GPU (en Linux a veces necesario)
-    chrome_options.add_argument("--no-sandbox")  
-    chrome_options.add_argument("--disable-dev-shm-usage")  
+    url = "https://deimos.dgi.uanl.mx/cgi-bin/wspd_cgi.sh/eselcarrera.htm"
+    url_nexus = "https://api.nexus.uanl.mx/WebApi/Seguridad/CrearSesionSIASE"
+    data = {
+        "HTMLTipCve": "01",
+        "HTMLUsuCve": user,
+        "HTMLPassword": password,
+        "HTMLPrograma": ""
+    }
+
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Origin": "https://deimos.dgi.uanl.mx",
+        "Referer": "https://deimos.dgi.uanl.mx/cgi-bin/wspd_cgi.sh/login.htm",
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    headers_nexus = {
+        "user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:136.0) Gecko/20100101 Firefox/136.0",
+        "accept": "application/json, text/plain, */*",
+        "accept-language": "en-US,en;q=0.5",
+        "accept-encoding": "gzip, deflate, br, zstd",
+        "control":  None,
+        "clienteip": "0.0.0.0",
+        "usuario": None,
+        "usuarioclave": "2143433",
+        "tipoclave": "01",
+        "sistemaid": "1",
+        "content-type": "application/json",
+        "content-length": "2",
+        "origin": "https://plataformanexus.uanl.mx",
+        "referer": "https://plataformanexus.uanl.mx/",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site",
+        "te": "trailers"
+    }
+
+    res = httpx.post(url, data=data, headers=headers)
+
+    # Aquí sí usamos el contenido de la respuesta
+    html_content = res.text
+
+    # Regex para extraer el contenido de attr("action", "...") dentro de #idfrNexus
+    pattern = r'\$\(\s*"#idfrNexus"\s*\)\.attr\(\s*"action"\s*,\s*"([^"]+)"\s*\)'
+
+    match = re.search(pattern, html_content, re.DOTALL)
+    if match:
+        url_login = match.group(1)
+    else:
+        print("No se encontró la URL")
+    url_login = url_login.split('=')
+    control = url_login[2] + "="
+    usu = url_login[1].split("&Ctrl")[0]
+    headers_nexus["control"] = control
+    headers_nexus["usuario"] = usu
 
 
-    #Inicializar servicio de de chromedriver para selenium
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service,options=chrome_options)
-    try:
-        driver.get("https://www.uanl.mx/enlinea/")
-        
-        #Seleccionar los objetos con los campos a llenar
-        loginbox = driver.find_element(By.NAME, "loginbox")
-        driver.switch_to.frame(loginbox)
-        html_user_login = driver.find_element(By.ID, "cuenta")
-        html_user_password = driver.find_element(By.ID, "pass")
-        button = driver.find_element(By.XPATH, "//button[contains(text(),'Entrar')]")
+    asknexus = httpx.post(url_nexus,  headers=headers_nexus, json={})
+    token = asknexus.json()['Sesion']['Token']
+    return token
 
-        # Enviar datos y clickear login
-        html_user_login.send_keys(user)
-        html_user_password.send_keys(password)  
-        button.click()
-        time.sleep(2)# Esperar a que Nexus cargue el contenido
-
-        # Bloque que consigue el token de NEXUS
-        try:
-            driver.switch_to.default_content()
-
-            element = driver.find_element(By.ID, "linkNexus")
-            driver.execute_script("""
-var element = arguments[0];
-if (element) {
-    var clickEvent = new MouseEvent('click', {
-        bubbles: true,
-        cancelable: true,
-        view: window
-    });
-    element.dispatchEvent(clickEvent);
-}
-""", element)
-
-            # Dentro de servicios UANL loggear a Nexus
-            #nexus = driver.find_element(By.CSS_SELECTOR, "img[src='https://deimos.dgi.uanl.mx/uanlimg/ws/nexus_btn.jpg']")
-            #nexus.click()
-            #nexus = driver.find_element(By.NAME, "btnNexus")
-            #nexus.click()
-             # Recargar Nexus y Obtener Token
-            windows = driver.window_handles
-            driver.switch_to.window(windows[1])
-            token = driver.wait_for_request("ConsultarModalidades", timeout=10)
-            token = token.headers['token']
-            success = True
-            print("El token fue obtenido con exito.")
-            return token
-        except:
-
-            #Se ejecuta si al pasar la password a SIASE esta no logra loggear o cualquier otra cosa, posiblemente por credenciales invalidas/incorrectas
-            print("Contrasena invalida o error en la ejecucion.")
-            return None
-    finally:
-        driver.quit()
-        

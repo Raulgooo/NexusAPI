@@ -4,7 +4,7 @@ import asyncio
 from tokens import get_token
 from requests_utils import get_cursos, get_tareas, get_user
 from typing import Dict
-
+from starlette.responses import RedirectResponse
 
 
 class User(BaseModel):  #User class
@@ -17,6 +17,10 @@ class TokenRequest(BaseModel):
 token_cache: Dict[str, str] = {}
 
 app = FastAPI(title="NexusAPI", version="1.0.0")
+
+@app.get("/")
+async def menu():
+    return RedirectResponse(url="/docs")
 
 @app.post("/login") #Endpoint  login
 async def login(user: User):
