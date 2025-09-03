@@ -27,7 +27,7 @@ def get_token(user, password):
         "control":  None,
         "clienteip": "0.0.0.0",
         "usuario": None,
-        "usuarioclave": "2143433",
+        "usuarioclave": None,
         "tipoclave": "01",
         "sistemaid": "1",
         "content-type": "application/json",
