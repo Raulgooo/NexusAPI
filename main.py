@@ -16,7 +16,7 @@ class TokenRequest(BaseModel):
     
 token_cache: Dict[str, str] = {}
 
-app = FastAPI(title="NexusAPI", version="1.0.0")
+app = FastAPI(title="NexusAPI", version="0.1.0")
 
 @app.get("/")
 async def menu():
