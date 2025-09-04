@@ -58,6 +58,7 @@ def get_token(user, password):
     usu = url_login[1].split("&Ctrl")[0]
     headers_nexus["control"] = control
     headers_nexus["usuario"] = usu
+    headers_nexus["usuarioclave"] = data["HTMLUsuCve"]
 
 
     asknexus = httpx.post(url_nexus,  headers=headers_nexus, json={})
